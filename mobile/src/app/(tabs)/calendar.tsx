@@ -30,8 +30,8 @@ export default function CalendarScreen() {
   const fetchHistory = async () => {
     try {
       setLoading(true);
-      const user = globalUser || { name: 'Guest', _id: 'default_user' };
-      const res = await fetch(`${API_URL}/api/medicines?userId=${user._id}`);
+      const user = globalUser || { name: 'Guest', id: 'default_user' };
+      const res = await fetch(`${API_URL}/api/medicines?userId=${user.id || user._id}`);
       const medicines = await res.json();
       
       const todayStr = new Date().toISOString().split('T')[0];

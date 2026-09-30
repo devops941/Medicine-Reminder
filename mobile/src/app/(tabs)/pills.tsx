@@ -39,12 +39,12 @@ export default function PillsScreen() {
   const [times, setTimes] = useState<Date[]>([]);
   const [showPicker, setShowPicker] = useState(false);
 
-  const user = globalUser || { name: 'Guest', _id: 'default_user' };
+  const user = globalUser || { name: 'Guest', id: 'default_user' };
 
   const fetchMedicines = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/api/medicines?userId=${user._id}`);
+      const res = await fetch(`${API_URL}/api/medicines?userId=${user.id || user._id}`);
       const data = await res.json();
       setMedicines(data);
     } catch (e) {
@@ -120,7 +120,7 @@ export default function PillsScreen() {
           dosage: dosage.trim() || '1 pill', 
           frequency: frequency.trim() || 'Daily', 
           time: timeString,
-          userId: user._id
+          userId: user.id || user._id
         })
       });
       if (!res.ok) {
