@@ -5,6 +5,7 @@ import { Calendar } from 'react-native-calendars';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { API_URL } from '@/config';
+import { globalUser } from '@/store';
 
 const COLORS = {
   primary: '#0F6E56',
@@ -29,7 +30,8 @@ export default function CalendarScreen() {
   const fetchHistory = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/api/medicines`);
+      const user = globalUser || { name: 'Guest', _id: 'default_user' };
+      const res = await fetch(`${API_URL}/api/medicines?userId=${user._id}`);
       const medicines = await res.json();
       
       const todayStr = new Date().toISOString().split('T')[0];

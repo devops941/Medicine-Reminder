@@ -5,7 +5,8 @@ const Medicine = require('../models/Medicine');
 // Get all medicines
 router.get('/', async (req, res) => {
   try {
-    const medicines = await Medicine.find();
+    const userId = req.query.userId || 'default_user';
+    const medicines = await Medicine.find({ user: userId });
     res.json(medicines);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -19,6 +20,7 @@ router.post('/', async (req, res) => {
     dosage: req.body.dosage,
     frequency: req.body.frequency,
     time: req.body.time,
+    user: req.body.userId || 'default_user',
   });
 
   try {

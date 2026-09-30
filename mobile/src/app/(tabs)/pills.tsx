@@ -5,6 +5,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import notifee, { TriggerType, RepeatFrequency, TimestampTrigger, AndroidImportance, AndroidCategory } from '@notifee/react-native';
 import { API_URL } from '@/config';
+import { globalUser } from '@/store';
 
 const COLORS = {
   primary: '#0F6E56',
@@ -38,10 +39,12 @@ export default function PillsScreen() {
   const [times, setTimes] = useState<Date[]>([]);
   const [showPicker, setShowPicker] = useState(false);
 
+  const user = globalUser || { name: 'Guest', _id: 'default_user' };
+
   const fetchMedicines = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/api/medicines`);
+      const res = await fetch(`${API_URL}/api/medicines?userId=${user._id}`);
       const data = await res.json();
       setMedicines(data);
     } catch (e) {
@@ -116,7 +119,8 @@ export default function PillsScreen() {
           name: name.trim(), 
           dosage: dosage.trim() || '1 pill', 
           frequency: frequency.trim() || 'Daily', 
-          time: timeString 
+          time: timeString,
+          userId: user._id
         })
       });
       if (!res.ok) {

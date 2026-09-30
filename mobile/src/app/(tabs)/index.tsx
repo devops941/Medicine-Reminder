@@ -76,7 +76,7 @@ export default function HomeScreen() {
   const fetchMedicines = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/api/medicines`);
+      const res = await fetch(`${API_URL}/api/medicines?userId=${user._id}`);
       const data = await res.json();
 
       const now = new Date();
