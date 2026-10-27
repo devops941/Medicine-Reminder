@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, Pressable, FlatList, Modal, TextInput, Activity
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import notifee, { TriggerType, RepeatFrequency, TimestampTrigger, AndroidImportance, AndroidCategory } from '@notifee/react-native';
 import { API_URL } from '@/config';
 import { globalUser } from '@/store';
+import { formatTimeStr, scheduleNotificationsForMed, cancelNotificationsForMed } from '@/utils/notifications';
 
 const COLORS = {
   primary: '#0F6E56',
@@ -58,14 +58,12 @@ export default function PillsScreen() {
     fetchMedicines();
   }, []);
 
-  const onTimeSelected = (event: any, selectedDate?: Date) => {
+  const onTimeSelected = (_event: any, selectedDate?: Date) => {
     setShowPicker(false);
     if (selectedDate) {
       setTimes([...times, selectedDate]);
     }
   };
-
-  const formatTime = (date: Date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   const resetForm = () => {
     setEditingId(null);
@@ -108,7 +106,7 @@ export default function PillsScreen() {
     }
     
     setSaving(true);
-    const timeString = times.map(formatTime).join(', ');
+    const timeString = times.map(formatTimeStr).join(', ');
     try {
       const url = editingId ? `${API_URL}/api/medicines/${editingId}` : `${API_URL}/api/medicines`;
       const method = editingId ? 'PUT' : 'POST';
@@ -130,42 +128,7 @@ export default function PillsScreen() {
       
       const savedMed = await res.json();
 
-      // Schedule alarms with notifee
-      for (let i = 0; i < times.length; i++) {
-        const t = times[i];
-        
-        // Calculate the next timestamp for this alarm
-        const now = new Date();
-        const triggerTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), t.getHours(), t.getMinutes(), 0);
-        if (triggerTime.getTime() <= now.getTime()) {
-          triggerTime.setDate(triggerTime.getDate() + 1); // If it's already passed today, schedule for tomorrow
-        }
-
-        const trigger: TimestampTrigger = {
-          type: TriggerType.TIMESTAMP,
-          timestamp: triggerTime.getTime(),
-          repeatFrequency: RepeatFrequency.DAILY,
-        };
-
-        await notifee.createTriggerNotification({
-          id: `${savedMed._id}-${i}`,
-          title: "Time for your Medicine! 💊",
-          body: `It's time to take ${savedMed.name} (${savedMed.dosage})`,
-          android: {
-            channelId: 'alarms_custom',
-            fullScreenAction: {
-              id: 'default',
-            },
-            importance: AndroidImportance.HIGH,
-            category: AndroidCategory.ALARM,
-            pressAction: {
-              id: 'default',
-            },
-            // This loops the sound like a real alarm until the user opens/dismisses
-            loopSound: true,
-          },
-        }, trigger);
-      }
+      await scheduleNotificationsForMed(savedMed);
       
       resetForm();
       setModalVisible(false);
@@ -189,11 +152,8 @@ export default function PillsScreen() {
             setSaving(true);
             await fetch(`${API_URL}/api/medicines/${editingId}`, { method: 'DELETE' });
             
-            // Cancel notifications
             if (editingId) {
-              for (let i = 0; i < times.length; i++) {
-                await notifee.cancelNotification(`${editingId}-${i}`).catch(() => {});
-              }
+              await cancelNotificationsForMed(editingId, times.length);
             }
             
             resetForm();
@@ -278,7 +238,7 @@ export default function PillsScreen() {
             <View style={styles.timeChipsContainer}>
               {times.map((t, i) => (
                 <View key={i} style={styles.timeChip}>
-                  <Text style={styles.timeChipText}>{formatTime(t)}</Text>
+                  <Text style={styles.timeChipText}>{formatTimeStr(t)}</Text>
                   <Pressable onPress={() => setTimes(times.filter((_, idx) => idx !== i))}>
                     <Ionicons name="close-circle" size={20} color={COLORS.error} />
                   </Pressable>
